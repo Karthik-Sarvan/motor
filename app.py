@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, render_template
-import serial, glob, threading
+import serial, glob, threading, time
 
-BAUD = 9600
+BAUD = 115200
 app = Flask(__name__)
 
 # Auto-detect USB ports
@@ -12,7 +12,8 @@ logs = []
 
 for i, p in enumerate(ports):
     try:
-        motors[f"m{i+1}"] = serial.Serial(p, BAUD, timeout=0.2)
+        motors[f"m{i+1}"] = serial.Serial(p, BAUD, timeout=0.1)
+        time.sleep(2)  # allow Arduino reset
     except:
         pass
 
@@ -20,12 +21,23 @@ def read_serial():
     while True:
         for k, s in motors.items():
             try:
-                if s.in_waiting:
-                    msg = s.readline().decode().strip()
-                    logs.append(f"{k}: {msg}")
+                while s.in_waiting:
+                    b = s.read(1)
+                    code = b[0]
+
+                    meaning = {
+                        0x55: "ACK",
+                        0xAB: "ERR",
+                        0xE1: "MAX LIMIT",
+                        0xE0: "MIN LIMIT",
+                        0xEE: "SYS_RDY"
+                    }.get(code, f"0x{code:02X}")
+
+                    logs.append(f"{k}: {meaning}")
                     logs[:] = logs[-50:]
             except:
                 pass
+        time.sleep(0.01)
 
 threading.Thread(target=read_serial, daemon=True).start()
 
@@ -39,7 +51,8 @@ def send():
     cmd = int(data["cmd"], 16)
 
     for m in data["targets"]:
-        motors[m].write(bytes([cmd]))
+        if m in motors:
+            motors[m].write(bytes([cmd]))
 
     return jsonify(ok=True)
 
@@ -49,4 +62,3 @@ def get_logs():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-

@@ -5,22 +5,26 @@
   <style>
     body { font-family: sans-serif; background:#111; color:#0f0 }
     button { margin:5px; padding:10px }
+    label { display:block }
   </style>
 </head>
 <body>
 
 <h2>Motors</h2>
-
 <div id="motors">
   {% for m in motors %}
-    <label><input type="checkbox" value="{{m}}"> {{m}}</label><br>
+    <label>
+      <input type="checkbox" value="{{m}}"> {{m}}
+    </label>
   {% endfor %}
 </div>
 
 <h2>Controls</h2>
+<button onclick="send('EE')">SYS READY?</button><br><br>
+
 <button onclick="send('FF')">ENABLE</button>
-<button onclick="send('F0')">START UP</button>
-<button onclick="send('F1')">START DOWN</button>
+<button onclick="send('F1')">START UP</button>
+<button onclick="send('F0')">START DOWN</button>
 <button onclick="send('00')">STOP</button>
 <button onclick="send('AA')">DISABLE</button>
 
@@ -29,21 +33,26 @@
 
 <script>
 function send(cmd){
-  let targets = [...document.querySelectorAll("input:checked")].map(x=>x.value);
+  let targets = [...document.querySelectorAll("input:checked")]
+                  .map(x => x.value);
+
+  if (targets.length === 0) return;
+
   fetch("/send", {
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({cmd, targets})
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cmd, targets })
   });
 }
 
-setInterval(()=>{
-  fetch("/logs").then(r=>r.json()).then(d=>{
-    document.getElementById("log").innerText = d.join("\n");
-  })
-},500);
+setInterval(() => {
+  fetch("/logs")
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById("log").innerText = d.join("\n");
+    });
+}, 500);
 </script>
 
 </body>
 </html>
-
