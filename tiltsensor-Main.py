@@ -7,7 +7,7 @@ class TiltSensor:
         if not self.client.connect():
             raise ConnectionError(f"Cannot connect to {ip}:{port}")
         self.slave_id = slave_id
-        print("✅ TiltSensor connected")
+        print(" TiltSensor connected")
 
     @staticmethod
     def _to_signed(v):
@@ -25,7 +25,7 @@ class TiltSensor:
             z = self._to_signed(rz) / 100.0
             return {"roll": x, "pitch": y, "yaw": z}
         except Exception as e:
-            print("❌ Read error:", e)
+            print(" Read error:", e)
             return None
 
     def close(self):
@@ -33,7 +33,7 @@ class TiltSensor:
 
 if __name__ == "__main__":
         sensor = TiltSensor("10.10.100.250", port=8899, slave_id=1)
-        print("✅ Tilt sensor connected. Reading angles...\n")
+        print("Tilt sensor connected. Reading angles...\n")
         try:
             while True:
                 data = sensor.read_angles()
@@ -44,9 +44,9 @@ if __name__ == "__main__":
                         f"Yaw: {data['yaw']:7.2f}°"
                     )
                 else:
-                    print("⚠️ No data")
+                    print(" No data")
                 time.sleep(0.5)
         except KeyboardInterrupt:
-            print("\n🛑 Stopped by user")
+            print("\n Stopped by user")
         finally:
             sensor.close()
